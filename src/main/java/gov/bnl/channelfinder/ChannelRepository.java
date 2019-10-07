@@ -69,9 +69,6 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
 
     @Value("${elasticsearch.channel.index:channelfinder}")
     private String ES_CHANNEL_INDEX;
-    @Value("${elasticsearch.channel.type:cf_channel}")
-    private String ES_CHANNEL_TYPE;
-
 
     @Autowired
     ElasticSearchClient esService;
@@ -88,7 +85,7 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
     public <S extends XmlChannel> S index(XmlChannel channel) {
         RestHighLevelClient client = esService.getIndexClient();
         try {
-            IndexRequest indexRequest = new IndexRequest(ES_CHANNEL_INDEX, ES_CHANNEL_TYPE)
+            IndexRequest indexRequest = new IndexRequest(ES_CHANNEL_INDEX)
                     .id(channel.getName())
                     .source(objectMapper.writeValueAsBytes(channel), XContentType.JSON);
             indexRequest.setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE);
@@ -118,7 +115,7 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
         try {
             BulkRequest bulkRequest = new BulkRequest();
             for (XmlChannel channel : channels) {
-                IndexRequest indexRequest = new IndexRequest(ES_CHANNEL_INDEX, ES_CHANNEL_TYPE)
+                IndexRequest indexRequest = new IndexRequest(ES_CHANNEL_INDEX)
                         .id(channel.getName())
                         .source(objectMapper.writeValueAsBytes(channel), XContentType.JSON);
                 bulkRequest.add(indexRequest);
@@ -186,8 +183,8 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
                 // In case of a rename, the old channel should be removed
                 deleteById(channelName);
             } 
-            updateRequest = new UpdateRequest(ES_CHANNEL_INDEX, ES_CHANNEL_TYPE, channel.getName());
-            IndexRequest indexRequest = new IndexRequest(ES_CHANNEL_INDEX, ES_CHANNEL_TYPE)
+            updateRequest = new UpdateRequest(ES_CHANNEL_INDEX, channel.getName());
+            IndexRequest indexRequest = new IndexRequest(ES_CHANNEL_INDEX)
                     .id(channel.getName())
                     .source(objectMapper.writeValueAsBytes(channel), XContentType.JSON);
             updateRequest.doc(objectMapper.writeValueAsBytes(channel), XContentType.JSON).upsert(indexRequest);
@@ -226,7 +223,7 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
         BulkRequest bulkRequest = new BulkRequest();
         try {
             for (XmlChannel channel : channels) {
-                UpdateRequest updateRequest = new UpdateRequest(ES_CHANNEL_INDEX, ES_CHANNEL_TYPE, channel.getName());
+                UpdateRequest updateRequest = new UpdateRequest(ES_CHANNEL_INDEX, channel.getName());
 
                 Optional<XmlChannel> existingChannel = findById(channel.getName());
                 if (existingChannel.isPresent()) {
@@ -253,7 +250,7 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
 
                     updateRequest.doc(objectMapper.writeValueAsBytes(channel), XContentType.JSON);
                 } else {
-                    IndexRequest indexRequest = new IndexRequest(ES_CHANNEL_INDEX, ES_CHANNEL_TYPE)
+                    IndexRequest indexRequest = new IndexRequest(ES_CHANNEL_INDEX)
                             .id(channel.getName())
                             .source(objectMapper.writeValueAsBytes(channel), XContentType.JSON);
                     updateRequest.doc(objectMapper.writeValueAsBytes(channel), XContentType.JSON).upsert(indexRequest);
@@ -292,7 +289,7 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
     @Override
     public Optional<XmlChannel> findById(String channelId) {
         RestHighLevelClient client = esService.getSearchClient();
-        GetRequest getRequest = new GetRequest(ES_CHANNEL_INDEX, ES_CHANNEL_TYPE, channelId);
+        GetRequest getRequest = new GetRequest(ES_CHANNEL_INDEX, channelId);
         try {
             GetResponse response = client.get(getRequest, RequestOptions.DEFAULT);
             if (response.isExists()) {
@@ -311,7 +308,7 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
         RestHighLevelClient client = esService.getSearchClient();
         MultiGetRequest request = new MultiGetRequest();
         for (String id : ids) {
-            Item getRequest = new MultiGetRequest.Item(ES_CHANNEL_INDEX, ES_CHANNEL_TYPE, id);
+            Item getRequest = new MultiGetRequest.Item(ES_CHANNEL_INDEX, id);
             getRequest.fetchSourceContext(new FetchSourceContext(false));
             getRequest.storedFields("_none_");
             request.add(getRequest);
@@ -336,7 +333,7 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
     @Override
     public boolean existsById(String id) {
         RestHighLevelClient client = esService.getSearchClient();
-        GetRequest getRequest = new GetRequest(ES_CHANNEL_INDEX, ES_CHANNEL_TYPE, id);
+        GetRequest getRequest = new GetRequest(ES_CHANNEL_INDEX, id);
         getRequest.fetchSourceContext(new FetchSourceContext(false));
         getRequest.storedFields("_none_");
         try {
@@ -358,7 +355,6 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
 
         SearchRequest searchRequest = new SearchRequest();
         searchRequest.indices(ES_CHANNEL_INDEX);
-        searchRequest.types(ES_CHANNEL_TYPE);
 
         SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
         // TODO use of scroll will be necessary
@@ -393,7 +389,7 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
         MultiGetRequest request = new MultiGetRequest();
 
         for (String channelId : channelIds) {
-            request.add(new MultiGetRequest.Item(ES_CHANNEL_INDEX, ES_CHANNEL_TYPE, channelId));
+            request.add(new MultiGetRequest.Item(ES_CHANNEL_INDEX, channelId));
         }
         try {
             List<XmlChannel> foundChannels = new ArrayList<XmlChannel>();
@@ -427,7 +423,7 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
     public void deleteById(String channelName) {
         RestHighLevelClient client = esService.getIndexClient();
 
-        DeleteRequest request = new DeleteRequest(ES_CHANNEL_INDEX, ES_CHANNEL_TYPE, channelName);
+        DeleteRequest request = new DeleteRequest(ES_CHANNEL_INDEX, channelName);
         request.setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE);
 
         try {
@@ -546,7 +542,6 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
             }
             searchSourceBuilder.query(qb);
             searchSourceBuilder.sort(SortBuilders.fieldSort("name").order(SortOrder.ASC));
-            searchRequest.types(ES_CHANNEL_TYPE);
             searchRequest.source(searchSourceBuilder);
 
             final SearchResponse searchResponse = client.search(searchRequest, RequestOptions.DEFAULT);

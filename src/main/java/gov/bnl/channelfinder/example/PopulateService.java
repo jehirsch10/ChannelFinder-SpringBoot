@@ -92,17 +92,10 @@ public class PopulateService {
 
     @Value("${elasticsearch.channel.index:channelfinder}")
     private String ES_CHANNEL_INDEX;
-    @Value("${elasticsearch.channel.type:cf_channel}")
-    private String ES_CHANNEL_TYPE;
     @Value("${elasticsearch.tag.index:cf_tags}")
     private String ES_TAG_INDEX;
-    @Value("${elasticsearch.tag.type:cf_tag}")
-    private String ES_TAG_TYPE;
     @Value("${elasticsearch.property.index:cf_properties}")
     private String ES_PROPERTY_INDEX;
-    @Value("${elasticsearch.property.type:cf_property}")
-    private String ES_PROPERTY_TYPE;
-
 
     static ObjectMapper mapper = new ObjectMapper();
 
@@ -139,13 +132,13 @@ public class PopulateService {
         try {
             BulkRequest bulkRequest = new BulkRequest();
             for (String channelName : channel_list) {
-                bulkRequest.add(new DeleteRequest(ES_CHANNEL_INDEX, ES_CHANNEL_TYPE, channelName));
+                bulkRequest.add(new DeleteRequest(ES_CHANNEL_INDEX, channelName));
             }
             for (XmlTag tag : tag_list) {
-                bulkRequest.add(new DeleteRequest(ES_TAG_INDEX, ES_TAG_TYPE, tag.getName()));
+                bulkRequest.add(new DeleteRequest(ES_TAG_INDEX, tag.getName()));
             }
             for (XmlProperty property : prop_list) {
-                bulkRequest.add(new DeleteRequest(ES_PROPERTY_INDEX, ES_PROPERTY_TYPE, property.getName()));
+                bulkRequest.add(new DeleteRequest(ES_PROPERTY_INDEX, property.getName()));
             }
             bulkRequest.setRefreshPolicy(RefreshPolicy.IMMEDIATE);
             BulkResponse bulkResponse = client.bulk(bulkRequest, RequestOptions.DEFAULT);
@@ -197,18 +190,18 @@ public class PopulateService {
         try {
             BulkRequest bulkRequest = new BulkRequest();
             for (XmlProperty property : prop_list) {
-                UpdateRequest updateRequest = new UpdateRequest(ES_PROPERTY_INDEX, ES_PROPERTY_TYPE,
+                UpdateRequest updateRequest = new UpdateRequest(ES_PROPERTY_INDEX,
                         property.getName());
                 updateRequest.doc(mapper.writeValueAsBytes(property), XContentType.JSON);
-                updateRequest.upsert(new IndexRequest(ES_PROPERTY_INDEX, ES_PROPERTY_TYPE, property.getName())
+                updateRequest.upsert(new IndexRequest(ES_PROPERTY_INDEX).id(property.getName())
                         .source(mapper.writeValueAsBytes(property), XContentType.JSON));
                 bulkRequest.add(updateRequest);
             }
             for (XmlTag tag : tag_list) {
 
-                UpdateRequest updateRequest = new UpdateRequest(ES_TAG_INDEX, ES_TAG_TYPE, tag.getName());
+                UpdateRequest updateRequest = new UpdateRequest(ES_TAG_INDEX, tag.getName());
                 updateRequest.doc(mapper.writeValueAsBytes(tag), XContentType.JSON);
-                updateRequest.upsert(new IndexRequest(ES_TAG_INDEX, ES_TAG_TYPE, tag.getName())
+                updateRequest.upsert(new IndexRequest(ES_TAG_INDEX).id(tag.getName())
                         .source(mapper.writeValueAsBytes(tag), XContentType.JSON));
                 bulkRequest.add(updateRequest);
             }
@@ -271,9 +264,9 @@ public class PopulateService {
             long start = System.currentTimeMillis();
             BulkRequest bulkRequest = new BulkRequest();
             for (XmlChannel channel : result) {
-                UpdateRequest updateRequest = new UpdateRequest(ES_CHANNEL_INDEX, ES_CHANNEL_TYPE, channel.getName());
+                UpdateRequest updateRequest = new UpdateRequest(ES_CHANNEL_INDEX, channel.getName());
                 updateRequest.doc(mapper.writeValueAsBytes(channel), XContentType.JSON);
-                updateRequest.upsert(new IndexRequest(ES_CHANNEL_INDEX, ES_CHANNEL_TYPE, channel.getName())
+                updateRequest.upsert(new IndexRequest(ES_CHANNEL_INDEX).id(channel.getName())
                         .source(mapper.writeValueAsBytes(channel), XContentType.JSON));
                 bulkRequest.add(updateRequest);
             }
@@ -332,9 +325,9 @@ public class PopulateService {
             long start = System.currentTimeMillis();
             BulkRequest bulkRequest = new BulkRequest();
             for (XmlChannel channel : result) {
-                UpdateRequest updateRequest = new UpdateRequest(ES_CHANNEL_INDEX, ES_CHANNEL_TYPE, channel.getName());
+                UpdateRequest updateRequest = new UpdateRequest(ES_CHANNEL_INDEX, channel.getName());
                 updateRequest.doc(mapper.writeValueAsBytes(channel), XContentType.JSON);
-                updateRequest.upsert(new IndexRequest("channelfinder", "channel", channel.getName())
+                updateRequest.upsert(new IndexRequest("channelfinder").id(channel.getName())
                         .source(mapper.writeValueAsBytes(channel), XContentType.JSON));
                 bulkRequest.add(updateRequest);
             }

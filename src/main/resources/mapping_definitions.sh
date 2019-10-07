@@ -19,8 +19,7 @@ es_port=9200
 #Create the Index
 curl -H 'Content-Type: application/json' -XPUT http://${es_host}:${es_port}/cf_tags -d'
 {
-"mappings":{
-  "cf_tag" : {
+  "mappings" : {
     "properties" : {
       "name" : {
         "type" : "keyword"
@@ -30,13 +29,11 @@ curl -H 'Content-Type: application/json' -XPUT http://${es_host}:${es_port}/cf_t
       }
     }
     }
-  }
 }'
 
 curl -H 'Content-Type: application/json' -XPUT http://${es_host}:${es_port}/cf_properties -d'
 {
-"mappings":{
-  "cf_property" : {
+  "mappings" : {
     "properties" : {
       "name" : {
         "type" : "keyword"
@@ -45,14 +42,12 @@ curl -H 'Content-Type: application/json' -XPUT http://${es_host}:${es_port}/cf_p
         "type" : "keyword"
       }
     }
-  }
   }
 }'
 
 curl -H 'Content-Type: application/json' -XPUT http://${es_host}:${es_port}/channelfinder -d'
 {
-"mappings":{
-  "cf_channel" : {
+  "mappings" : {
     "properties" : {
       "name" : {
         "type" : "keyword"
@@ -89,6 +84,5 @@ curl -H 'Content-Type: application/json' -XPUT http://${es_host}:${es_port}/chan
         }
       }
     }
-  }
   }
 }'
